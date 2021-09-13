@@ -15,11 +15,11 @@ var (
 	tokenNotValidErr = errors.New("token not valid")
 )
 
-func (ps *Proxys) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
+func (ps *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
 	return ps.ctrl(token)
 }
 
-func (ps *Proxys) ctrl(token string) func(http.ResponseWriter, *http.Request) {
+func (ps *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := tokenValid(token, r); err != nil {
 			handleErr("tokenValid", err, w)
@@ -57,7 +57,7 @@ func (ps *Proxys) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (ps *Proxys) startFunc(w http.ResponseWriter, name string, err error) {
+func (ps *Manager) startFunc(w http.ResponseWriter, name string, err error) {
 	if !ps.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", name)), w)
 		return
@@ -68,7 +68,7 @@ func (ps *Proxys) startFunc(w http.ResponseWriter, name string, err error) {
 	handleErr("start", err, w)
 }
 
-func (ps *Proxys) stopFunc(w http.ResponseWriter, name string, err error) {
+func (ps *Manager) stopFunc(w http.ResponseWriter, name string, err error) {
 	if !ps.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", name)), w)
 		return
@@ -79,7 +79,7 @@ func (ps *Proxys) stopFunc(w http.ResponseWriter, name string, err error) {
 	handleErr("stop", err, w)
 }
 
-func (ps *Proxys) removeFunc(w http.ResponseWriter, name string, err error) {
+func (ps *Manager) removeFunc(w http.ResponseWriter, name string, err error) {
 	if !ps.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", name)), w)
 		return
@@ -89,7 +89,7 @@ func (ps *Proxys) removeFunc(w http.ResponseWriter, name string, err error) {
 	handleErr("proxys.Remove", err, w)
 }
 
-func (ps *Proxys) addFunc(w http.ResponseWriter, r *http.Request, name string) {
+func (ps *Manager) addFunc(w http.ResponseWriter, r *http.Request, name string) {
 	if ps.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", name)), w)
 		return
@@ -108,7 +108,7 @@ func (ps *Proxys) addFunc(w http.ResponseWriter, r *http.Request, name string) {
 	handleErr("proxys.Add", err, w)
 }
 
-func (ps *Proxys) detailsFunc(w http.ResponseWriter) {
+func (ps *Manager) detailsFunc(w http.ResponseWriter) {
 	details := ps.Details()
 	bytes, err := json.Marshal(details)
 	if err != nil {

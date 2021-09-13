@@ -7,56 +7,56 @@ import (
 	"time"
 )
 
-type Proxys struct {
+type Manager struct {
 	mu   sync.RWMutex
 	dict map[string]*Proxy
 }
 
-func NewProxys() *Proxys {
-	return &Proxys{
+func NewProxys() *Manager {
+	return &Manager{
 		mu:   sync.RWMutex{},
 		dict: make(map[string]*Proxy),
 	}
 }
 
-func (ps *Proxys) Add(name, local, remote string) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
+func (m *Manager) Add(name, local, remote string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
 	p := New(name, local, remote, 3*time.Second, DefaultLogger{}, false)
-	err := ps.add(name, p)
+	err := m.add(name, p)
 	if err != nil {
 		return err
 	}
 	return p.Run()
 }
 
-func (ps *Proxys) add(name string, p *Proxy) error {
-	_, ok := ps.dict[name]
+func (m *Manager) add(name string, p *Proxy) error {
+	_, ok := m.dict[name]
 	if ok {
 		return errors.New(fmt.Sprintf("proxy: %s exists", name))
 	}
 
-	ps.dict[name] = p
+	m.dict[name] = p
 	return nil
 }
 
-func (ps *Proxys) Remove(name string) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
+func (m *Manager) Remove(name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	_ = ps.dict[name].Stop()
+	_ = m.dict[name].Stop()
 
-	return ps.remove(name)
+	return m.remove(name)
 }
 
-func (ps *Proxys) remove(name string) error {
-	_, ok := ps.dict[name]
+func (m *Manager) remove(name string) error {
+	_, ok := m.dict[name]
 	if !ok {
 		return errors.New(fmt.Sprintf("proxy: %s dose not exists", name))
 	}
 
-	delete(ps.dict, name)
+	delete(m.dict, name)
 	return nil
 }
 
@@ -67,12 +67,12 @@ type Detail struct {
 	Running bool
 }
 
-func (ps *Proxys) Details() []*Detail {
-	ps.mu.RLock()
-	defer ps.mu.RUnlock()
+func (m *Manager) Details() []*Detail {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
 	var details []*Detail
-	for name, p := range ps.dict {
+	for name, p := range m.dict {
 		detail := Detail{
 			Name:    name,
 			Local:   p.local,
@@ -84,7 +84,7 @@ func (ps *Proxys) Details() []*Detail {
 	return details
 }
 
-func (ps *Proxys) Exists(name string) bool {
-	_, exists := ps.dict[name]
+func (m *Manager) Exists(name string) bool {
+	_, exists := m.dict[name]
 	return exists
 }
