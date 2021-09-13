@@ -28,7 +28,6 @@ err := p.Stop()
 manager := proxy.NewManager()
 err := manager.Add("mysql", "127.0.0.1:3309", "127.0.0.1:3306")
 err := manager.Remove("mysql")
-details := manager.Details()
 
 http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
 _ = http.ListenAndServe(":9000", nil)
