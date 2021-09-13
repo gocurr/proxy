@@ -16,6 +16,7 @@ type Proxy struct {
 	toStop   chan struct{}
 	Done     chan struct{}
 	failFast bool
+	fired    bool
 	running  bool
 	notified bool
 	mu       *sync.Mutex
@@ -57,9 +58,11 @@ func (p *Proxy) Run() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.running {
-		return errors.New("already running")
+	if p.fired {
+		return errors.New("already fired")
 	}
+
+	p.fired = true
 
 	go p.doRun()
 	return nil
@@ -71,7 +74,9 @@ func (p *Proxy) doRun() {
 	select {
 	case <-p.Done:
 		p.logger.Info("proxy stopped")
+		p.fired = false
 		p.running = false
+		p.notified = false
 		return
 	}
 }
