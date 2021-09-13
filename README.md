@@ -29,4 +29,29 @@ manager := NewManager()
 err := manager.Add("mysql", "127.0.0.1:3309", "127.0.0.1:3306")
 err := manager.Remove("mysql")
 details := manager.Details()
+
+http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
+_ = http.ListenAndServe(":9000", nil)
 ```
+
+```bash
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"details"}' http://127.0.0.1:9000/proxy
+```
+
+```bash
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"start", "name":"mysql"}' http://127.0.0.1:9000/proxy
+```
+
+```bash
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"stop", "name":"mysql"}' http://127.0.0.1:9000/proxy
+```
+
+```bash
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"add", "name":"mysql", "local":"127.0.0.1:8888", "remote":"127.0.0.1:9090"}' http://127.0.0.1:9000/proxy
+```
+
+```bash
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"remove", "name":"mysql"}' http://127.0.0.1:9000/proxy
+```
+
+

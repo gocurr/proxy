@@ -7,7 +7,7 @@ import (
 
 func Test_main(t *testing.T) {
 	manager := NewManager()
-	err := manager.Add("mysql", "127.0.0.1:8888", "127.0.0.1:9090")
+	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 	if err != nil {
 		panic(err)
 	}
