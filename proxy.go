@@ -55,11 +55,11 @@ func (p *Proxy) Stop() error {
 
 func (p *Proxy) Run() error {
 	p.mu.Lock()
+	defer p.mu.Unlock()
+
 	if p.running {
-		p.mu.Unlock()
 		return errors.New("already running")
 	}
-	p.mu.Unlock()
 
 	go p.doRun()
 	return nil
