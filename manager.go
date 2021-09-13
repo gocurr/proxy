@@ -8,13 +8,13 @@ import (
 )
 
 type Proxys struct {
-	mu   sync.Mutex
+	mu   sync.RWMutex
 	dict map[string]*Proxy
 }
 
 func NewProxys() *Proxys {
 	return &Proxys{
-		mu:   sync.Mutex{},
+		mu:   sync.RWMutex{},
 		dict: make(map[string]*Proxy),
 	}
 }
@@ -68,6 +68,9 @@ type Detail struct {
 }
 
 func (ps *Proxys) Details() []*Detail {
+	ps.mu.RLock()
+	defer ps.mu.RUnlock()
+
 	var details []*Detail
 	for name, p := range ps.dict {
 		detail := Detail{
