@@ -62,13 +62,11 @@ func (p *Proxy) Run() error {
 func (p *Proxy) doRun() {
 	go p.run()
 
-	for {
-		select {
-		case <-p.Done:
-			p.logger.Info("proxy stopped")
-			p.running = false
-			return
-		}
+	select {
+	case <-p.Done:
+		p.logger.Info("proxy stopped")
+		p.running = false
+		return
 	}
 }
 
