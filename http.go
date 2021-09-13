@@ -15,11 +15,11 @@ var (
 	tokenNotValidErr = errors.New("token not valid")
 )
 
-func (ps *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
-	return ps.ctrl(token)
+func (m *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
+	return m.ctrl(token)
 }
 
-func (ps *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
+func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := tokenValid(token, r); err != nil {
 			handleErr("tokenValid", err, w)
@@ -33,7 +33,7 @@ func (ps *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 		}
 
 		if typ == "details" {
-			ps.detailsFunc(w)
+			m.detailsFunc(w)
 			return
 		}
 
@@ -44,53 +44,53 @@ func (ps *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 		}
 		switch typ {
 		case "start":
-			ps.startFunc(w, name, err)
+			m.startFunc(w, name, err)
 		case "stop":
-			ps.stopFunc(w, name, err)
+			m.stopFunc(w, name, err)
 		case "add":
-			ps.addFunc(w, r, name)
+			m.addFunc(w, r, name)
 		case "remove":
-			ps.removeFunc(w, name, err)
+			m.removeFunc(w, name, err)
 		default:
 			handleErr("check-type", errors.New(fmt.Sprintf("unknow type %s", typ)), w)
 		}
 	}
 }
 
-func (ps *Manager) startFunc(w http.ResponseWriter, name string, err error) {
-	if !ps.Exists(name) {
+func (m *Manager) startFunc(w http.ResponseWriter, name string, err error) {
+	if !m.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", name)), w)
 		return
 	}
 
-	p := ps.dict[name]
+	p := m.dict[name]
 	err = p.Run()
 	handleErr("start", err, w)
 }
 
-func (ps *Manager) stopFunc(w http.ResponseWriter, name string, err error) {
-	if !ps.Exists(name) {
+func (m *Manager) stopFunc(w http.ResponseWriter, name string, err error) {
+	if !m.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", name)), w)
 		return
 	}
 
-	p := ps.dict[name]
+	p := m.dict[name]
 	err = p.Stop()
 	handleErr("stop", err, w)
 }
 
-func (ps *Manager) removeFunc(w http.ResponseWriter, name string, err error) {
-	if !ps.Exists(name) {
+func (m *Manager) removeFunc(w http.ResponseWriter, name string, err error) {
+	if !m.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", name)), w)
 		return
 	}
 
-	err = ps.Remove(name)
+	err = m.Remove(name)
 	handleErr("proxys.Remove", err, w)
 }
 
-func (ps *Manager) addFunc(w http.ResponseWriter, r *http.Request, name string) {
-	if ps.Exists(name) {
+func (m *Manager) addFunc(w http.ResponseWriter, r *http.Request, name string) {
+	if m.Exists(name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", name)), w)
 		return
 	}
@@ -104,12 +104,12 @@ func (ps *Manager) addFunc(w http.ResponseWriter, r *http.Request, name string) 
 		handleErr("paramter", err, w)
 		return
 	}
-	err = ps.Add(name, local, remote)
+	err = m.Add(name, local, remote)
 	handleErr("proxys.Add", err, w)
 }
 
-func (ps *Manager) detailsFunc(w http.ResponseWriter) {
-	details := ps.Details()
+func (m *Manager) detailsFunc(w http.ResponseWriter) {
+	details := m.Details()
 	bytes, err := json.Marshal(details)
 	if err != nil {
 		handleErr("detail", err, w)
