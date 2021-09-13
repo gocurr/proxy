@@ -35,7 +35,7 @@ if err != nil {
 ```go
 var err error
 manager := proxy.NewManager()
-err = manager.Add("mysql", "127.0.0.1:3309", "127.0.0.1:3306")
+err = manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306", 3*time.Second, DefaultLogger{}, false)
 if err != nil {
 // ...
 }

@@ -19,11 +19,11 @@ func NewManager() *Manager {
 	}
 }
 
-func (m *Manager) Add(name, local, remote string) error {
+func (m *Manager) Add(name, local, remote string, timeout time.Duration, logger Logger, failFast bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	p := New(name, local, remote, 3*time.Second, DefaultLogger{}, false)
+	p := New(name, local, remote, timeout, logger, failFast)
 	err := m.add(name, p)
 	if err != nil {
 		return err
