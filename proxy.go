@@ -9,10 +9,9 @@ import (
 )
 
 type Proxy struct {
-	dest     string
+	remote   string
 	local    string
 	timeout  time.Duration
-	logger   Logger
 	toStop   chan struct{}
 	done     chan struct{}
 	failFast bool
@@ -20,11 +19,12 @@ type Proxy struct {
 	running  bool
 	notified bool
 	mu       *sync.Mutex
+	logger   Logger
 }
 
 func New(dest, local string, timeout time.Duration, logger Logger, failFast bool) *Proxy {
 	return &Proxy{
-		dest:     dest,
+		remote:   dest,
 		local:    local,
 		timeout:  timeout,
 		logger:   logger,
@@ -82,7 +82,7 @@ func (p *Proxy) doRun() {
 
 func (p *Proxy) run() {
 	// check destination alive first
-	testConn, err := net.DialTimeout("tcp", p.dest, p.timeout)
+	testConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
 	if err != nil {
 		if p.failFast {
 			p.logger.Fatal(err)
@@ -134,7 +134,7 @@ func (p *Proxy) proxy(inConn net.Conn) {
 
 	defer connClose(inConn)
 
-	outConn, err := net.DialTimeout("tcp", p.dest, p.timeout)
+	outConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
 	if err != nil {
 		p.logger.Errorf("%v", err)
 		return
