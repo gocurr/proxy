@@ -9,6 +9,14 @@ import (
 	"strings"
 )
 
+type P struct {
+	Token  string `json:"token"`
+	Type   string `json:"type"`
+	Name   string `json:"name"`
+	Local  string `json:"local"`
+	Remote string `json:"remote"`
+}
+
 func (m *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
 	return m.ctrl(token)
 }
@@ -83,14 +91,6 @@ func (m *Manager) removeFunc(w http.ResponseWriter, p *P) {
 
 	err := m.Remove(p.Name)
 	handleErr("proxys.Remove", err, w)
-}
-
-type P struct {
-	Token  string `json:"token"`
-	Type   string `json:"type"`
-	Name   string `json:"name"`
-	Local  string `json:"local"`
-	Remote string `json:"remote"`
 }
 
 func unmarshal(w http.ResponseWriter, r *http.Request) (*P, error) {
