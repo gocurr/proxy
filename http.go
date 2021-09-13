@@ -33,11 +33,11 @@ func (p *Proxy) ctrl(token string, logging bool) func(http.ResponseWriter, *http
 
 		switch typ {
 		case "start":
-			p.Run()
-			p.handleErr("start", nil, w, logging)
+			err = p.Run()
+			p.handleErr("start", err, w, logging)
 		case "stop":
-			p.Stop()
-			p.handleErr("stop", nil, w, logging)
+			err = p.Stop()
+			p.handleErr("stop", err, w, logging)
 		default:
 			p.handleErr("check-type", errors.New(fmt.Sprintf("unknow type %s", typ)), w, logging)
 		}

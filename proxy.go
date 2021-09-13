@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"errors"
 	"io"
 	"net"
 	"sync"
@@ -33,19 +34,29 @@ func New(dest, local string, timeout time.Duration, logger Logger, failFast bool
 	}
 }
 
-func (p *Proxy) Stop() {
+func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if !p.running || p.notified {
-		return
+		return errors.New("already stopped")
 	}
+
 	p.toStop <- struct{}{}
 	p.notified = true
 	p.logger.Info("notify proxy to stop")
+	return nil
 }
 
-func (p *Proxy) Run() {
+func (p *Proxy) Run() error {
+	p.mu.Lock()
+	if p.running {
+		p.mu.Unlock()
+		return errors.New("already running")
+	}
+	p.mu.Unlock()
+
 	go p.doRun()
+	return nil
 }
 
 func (p *Proxy) doRun() {
@@ -55,20 +66,13 @@ func (p *Proxy) doRun() {
 		select {
 		case <-p.Done:
 			p.logger.Info("proxy stopped")
+			p.running = false
 			return
 		}
 	}
 }
 
 func (p *Proxy) run() {
-	p.mu.Lock()
-	if p.running {
-		p.mu.Unlock()
-		p.logger.Errorf("already running")
-		return
-	}
-	p.mu.Unlock()
-
 	// check destination alive first
 	testConn, err := net.DialTimeout("tcp", p.dest, p.timeout)
 	if err != nil {
@@ -87,12 +91,12 @@ bind:
 	if err != nil {
 		p.logger.Fatal(err)
 	}
-
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
+	p.logger.Info("proxy has been started")
 
-	// accept for connections
+	// accept connections
 	for {
 		select {
 		case <-p.toStop:
@@ -112,12 +116,12 @@ bind:
 }
 
 func (p *Proxy) proxy(inConn net.Conn) {
-	errors := make(chan error, 2)
+	errChan := make(chan error, 2)
 
 	connClose := func(conn net.Conn) { _ = conn.Close() }
 	connDup := func(dst io.Writer, src io.Reader) {
 		_, err := io.Copy(dst, src)
-		errors <- err
+		errChan <- err
 	}
 
 	defer connClose(inConn)
@@ -131,5 +135,5 @@ func (p *Proxy) proxy(inConn net.Conn) {
 
 	go connDup(inConn, outConn)
 	go connDup(outConn, inConn)
-	<-errors
+	<-errChan
 }
