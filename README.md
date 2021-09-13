@@ -47,11 +47,11 @@ curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"stop
 ```
 
 ```bash
-curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"add", "name":"mysql", "local":"127.0.0.1:8888", "remote":"127.0.0.1:9090"}' http://127.0.0.1:9000/proxy
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"add", "name":"http-proxy", "local":"127.0.0.1:9091", "remote":"127.0.0.1:80"}' http://127.0.0.1:9000/proxy
 ```
 
 ```bash
-curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"remove", "name":"mysql"}' http://127.0.0.1:9000/proxy
+curl -X POST -H "Content-Type:application/json" -d '{"token":"xxx", "type":"remove", "name":"http-proxy"}' http://127.0.0.1:9000/proxy
 ```
 
 
