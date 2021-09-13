@@ -17,7 +17,7 @@ It requires Go 1.11 or later due to usage of Go Modules.
 - To start a proxy:
 
 ```go
-p := proxy.New(name, local, remote, 3*time.Second, DefaultLogger{}, false)
+p := proxy.New(name, local, remote, 3*time.Second, proxy.DefaultLogger{}, false)
 err := p.Run()
 err := p.Stop()
 ```
