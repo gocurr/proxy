@@ -6,7 +6,7 @@ import (
 )
 
 func Test_main(t *testing.T) {
-	manager := NewProxys()
+	manager := NewManager()
 	err := manager.Add("mysql", "127.0.0.1:8888", "127.0.0.1:9090")
 	if err != nil {
 		panic(err)

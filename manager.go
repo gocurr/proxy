@@ -12,7 +12,7 @@ type Manager struct {
 	dict map[string]*Proxy
 }
 
-func NewProxys() *Manager {
+func NewManager() *Manager {
 	return &Manager{
 		mu:   sync.RWMutex{},
 		dict: make(map[string]*Proxy),
