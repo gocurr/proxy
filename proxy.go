@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"sync"
@@ -9,8 +10,9 @@ import (
 )
 
 type Proxy struct {
-	remote   string
+	name     string
 	local    string
+	remote   string
 	timeout  time.Duration
 	toStop   chan struct{}
 	done     chan struct{}
@@ -22,10 +24,11 @@ type Proxy struct {
 	logger   Logger
 }
 
-func New(dest, local string, timeout time.Duration, logger Logger, failFast bool) *Proxy {
+func New(name, local, remote string, timeout time.Duration, logger Logger, failFast bool) *Proxy {
 	return &Proxy{
-		remote:   dest,
+		name:     name,
 		local:    local,
+		remote:   remote,
 		timeout:  timeout,
 		logger:   logger,
 		toStop:   make(chan struct{}, 2),
@@ -39,7 +42,7 @@ func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if !p.running || p.notified {
-		return errors.New("already stopped")
+		return errors.New(fmt.Sprintf("%s: proxy already stopped", p.name))
 	}
 
 	p.toStop <- struct{}{}
@@ -72,7 +75,7 @@ func (p *Proxy) doRun() {
 
 	select {
 	case <-p.done:
-		p.logger.Info("proxy stopped")
+		p.logger.Info(fmt.Sprintf("%s: proxy stopped", p.name))
 		p.fired = false
 		p.running = false
 		p.notified = false
@@ -102,7 +105,7 @@ bind:
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
-	p.logger.Info("proxy started")
+	p.logger.Info(fmt.Sprintf("%s: proxy started", p.name))
 
 	// accept connections
 	for {

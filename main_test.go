@@ -3,14 +3,15 @@ package proxy
 import (
 	"net/http"
 	"testing"
-	"time"
 )
 
 func Test_main(t *testing.T) {
-	p := New("localhost:9090", "localhost:9999", time.Second*3, DefaultLogger{}, false)
+	proxys := NewProxys()
+	err := proxys.Add("mysql", "127.0.0.1:8888", "127.0.0.1:9090")
+	if err != nil {
+		panic(err)
+	}
 
-	_ = p.Run()
-
-	http.HandleFunc("/inner", p.HttpProxyCtrl("xxx", false))
+	http.HandleFunc("/inner", proxys.HttpProxyCtrl("xxx"))
 	_ = http.ListenAndServe(":9000", nil)
 }
