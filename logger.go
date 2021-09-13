@@ -3,12 +3,17 @@ package proxy
 import log "github.com/sirupsen/logrus"
 
 type Logger interface {
+	Info(args ...interface{})
 	Infof(format string, args ...interface{})
 	Errorf(format string, args ...interface{})
 	Fatal(args ...interface{})
 }
 
 type DefaultLogger struct {
+}
+
+func (d DefaultLogger) Info(args ...interface{}) {
+	log.Info(args...)
 }
 
 func (d DefaultLogger) Infof(format string, args ...interface{}) {

@@ -18,8 +18,6 @@ type Proxy struct {
 	running  bool
 	notified bool
 	mu       *sync.Mutex
-	inConn   net.Conn
-	outConn  net.Conn
 }
 
 func New(dest, local string, timeout time.Duration, logger Logger, failFast bool) *Proxy {
@@ -43,7 +41,7 @@ func (p *Proxy) Stop() {
 	}
 	p.toStop <- struct{}{}
 	p.notified = true
-	p.logger.Infof("notify proxy to stop")
+	p.logger.Info("notify proxy to stop")
 }
 
 func (p *Proxy) Run() {
@@ -56,7 +54,7 @@ func (p *Proxy) doRun() {
 	for {
 		select {
 		case <-p.Done:
-			p.logger.Infof("Done")
+			p.logger.Info("proxy stopped")
 			return
 		}
 	}
@@ -98,7 +96,6 @@ bind:
 	for {
 		select {
 		case <-p.toStop:
-			p.logger.Infof("proxy stopped")
 			p.Done <- struct{}{}
 			return
 		default:
@@ -108,34 +105,31 @@ bind:
 				continue
 			}
 
-			p.inConn = conn
 			// to proxy
-			go p.proxy()
+			go p.proxy(conn)
 		}
-
 	}
 }
 
-func (p *Proxy) proxy() {
-	errc := make(chan error, 2)
+func (p *Proxy) proxy(inConn net.Conn) {
+	errors := make(chan error, 2)
 
 	connClose := func(conn net.Conn) { _ = conn.Close() }
 	connDup := func(dst io.Writer, src io.Reader) {
 		_, err := io.Copy(dst, src)
-		errc <- err
+		errors <- err
 	}
 
-	defer connClose(p.inConn)
+	defer connClose(inConn)
 
-	var err error
-	p.outConn, err = net.DialTimeout("tcp", p.dest, p.timeout)
+	outConn, err := net.DialTimeout("tcp", p.dest, p.timeout)
 	if err != nil {
 		p.logger.Errorf("%v", err)
 		return
 	}
-	defer connClose(p.outConn)
+	defer connClose(outConn)
 
-	go connDup(p.inConn, p.outConn)
-	go connDup(p.outConn, p.inConn)
-	<-errc
+	go connDup(inConn, outConn)
+	go connDup(outConn, inConn)
+	<-errors
 }
