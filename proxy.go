@@ -44,7 +44,13 @@ func (p *Proxy) Stop() error {
 	p.toStop <- struct{}{}
 	p.notified = true
 	p.logger.Info("notify proxy to stop")
-	return nil
+
+	// consume a conn
+	testConn, err := net.Dial("tcp", p.local)
+	if err != nil {
+		return err
+	}
+	return testConn.Close()
 }
 
 func (p *Proxy) Run() error {
