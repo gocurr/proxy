@@ -17,7 +17,7 @@ It requires Go 1.11 or later due to usage of Go Modules.
 - To start a proxy:
 
 ```go
-p := New(name, local, remote, 3*time.Second, DefaultLogger{}, false)
+p := proxy.New(name, local, remote, 3*time.Second, DefaultLogger{}, false)
 err := p.Run()
 err := p.Stop()
 ```
@@ -25,7 +25,7 @@ err := p.Stop()
 - To start a proxy-manager:
 
 ```go
-manager := NewManager()
+manager := proxy.NewManager()
 err := manager.Add("mysql", "127.0.0.1:3309", "127.0.0.1:3306")
 err := manager.Remove("mysql")
 details := manager.Details()
