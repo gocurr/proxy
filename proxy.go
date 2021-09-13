@@ -14,7 +14,7 @@ type Proxy struct {
 	timeout  time.Duration
 	logger   Logger
 	toStop   chan struct{}
-	Done     chan struct{}
+	done     chan struct{}
 	failFast bool
 	fired    bool
 	running  bool
@@ -29,7 +29,7 @@ func New(dest, local string, timeout time.Duration, logger Logger, failFast bool
 		timeout:  timeout,
 		logger:   logger,
 		toStop:   make(chan struct{}, 2),
-		Done:     make(chan struct{}),
+		done:     make(chan struct{}),
 		failFast: failFast,
 		mu:       &sync.Mutex{},
 	}
@@ -44,7 +44,6 @@ func (p *Proxy) Stop() error {
 
 	p.toStop <- struct{}{}
 	p.notified = true
-	p.logger.Info("notify proxy to stop")
 
 	// consume a conn
 	testConn, err := net.Dial("tcp", p.local)
@@ -72,7 +71,7 @@ func (p *Proxy) doRun() {
 	go p.run()
 
 	select {
-	case <-p.Done:
+	case <-p.done:
 		p.logger.Info("proxy stopped")
 		p.fired = false
 		p.running = false
@@ -103,13 +102,13 @@ bind:
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
-	p.logger.Info("proxy has been started")
+	p.logger.Info("proxy started")
 
 	// accept connections
 	for {
 		select {
 		case <-p.toStop:
-			p.Done <- struct{}{}
+			p.done <- struct{}{}
 			return
 		default:
 			conn, err := ln.Accept()
