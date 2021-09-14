@@ -28,9 +28,9 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		p, err := unmarshal(w, r)
+		p, err := parameter(r)
 		if err != nil {
-			handleErr("unmarshal", err, w)
+			handleErr("parameter", err, w)
 			return
 		}
 
@@ -46,24 +46,24 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 
 		switch p.Type {
 		case "details":
-			m.detailsFunc(w)
+			m.details(w)
 		case "start":
-			m.startFunc(w, p)
+			m.start(w, p)
 		case "stop":
-			m.stopFunc(w, p)
-		case "add":
-			m.addFunc(w, p)
-		case "remove":
-			m.removeFunc(w, p)
+			m.stop(w, p)
+		case "insert":
+			m.insert(w, p)
+		case "delete":
+			m.delete(w, p)
 		default:
 			handleErr("check-type", errors.New(fmt.Sprintf("unknow type %s", p.Type)), w)
 		}
 	}
 }
 
-func (m *Manager) startFunc(w http.ResponseWriter, p *P) {
+func (m *Manager) start(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
+		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
 		return
 	}
 
@@ -72,9 +72,9 @@ func (m *Manager) startFunc(w http.ResponseWriter, p *P) {
 	handleErr("start", err, w)
 }
 
-func (m *Manager) stopFunc(w http.ResponseWriter, p *P) {
+func (m *Manager) stop(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
+		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
 		return
 	}
 
@@ -83,9 +83,9 @@ func (m *Manager) stopFunc(w http.ResponseWriter, p *P) {
 	handleErr("stop", err, w)
 }
 
-func (m *Manager) removeFunc(w http.ResponseWriter, p *P) {
+func (m *Manager) delete(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", p.Name)), w)
+		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s exists", p.Name)), w)
 		return
 	}
 
@@ -93,24 +93,22 @@ func (m *Manager) removeFunc(w http.ResponseWriter, p *P) {
 	handleErr("proxys.Remove", err, w)
 }
 
-func unmarshal(w http.ResponseWriter, r *http.Request) (*P, error) {
+func parameter(r *http.Request) (*P, error) {
 	var p P
 	all, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		handleErr("ioutil.ReadAll", err, w)
 		return nil, err
 	}
 	defer func() { _ = r.Body.Close() }()
 
 	err = json.Unmarshal(all, &p)
 	if err != nil {
-		handleErr("json.Unmarshal", err, w)
 		return nil, err
 	}
 	return &p, nil
 }
 
-func (m *Manager) addFunc(w http.ResponseWriter, p *P) {
+func (m *Manager) insert(w http.ResponseWriter, p *P) {
 	if m.Exists(p.Name) {
 		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", p.Name)), w)
 		return
@@ -124,7 +122,7 @@ func (m *Manager) addFunc(w http.ResponseWriter, p *P) {
 	handleErr("proxys.Add", err, w)
 }
 
-func (m *Manager) detailsFunc(w http.ResponseWriter) {
+func (m *Manager) details(w http.ResponseWriter) {
 	details := m.Details()
 	if len(details) == 0 {
 		details = []*Detail{}
