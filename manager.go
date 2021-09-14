@@ -29,7 +29,7 @@ func (m *Manager) Add(name, local, remote string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	p := New(name, local, remote, m.timeout, m.logger, m.failFast)
+	p := New(name, local, remote, m.timeout, m.failFast, m.logger)
 	err := m.add(name, p)
 	if err != nil {
 		return err

@@ -18,15 +18,16 @@ It requires Go 1.11 or later due to usage of Go Modules.
 
 ```go
 var err error
-p := proxy.New(name, local, remote, m.timeout, proxy.DefaultLogger{}, m.failFast)
+p := proxy.New("mysql", "127.0.0.1:3307", "127.0.0.1:3306", 3*time.Second, false, proxy.DefaultLogger{})
 err = p.Run()
 if err != nil {
-// ...
+// handle error
 }
 
+// when you want to stop the proxy
 err = p.Stop()
 if err != nil {
-// ...
+// handle error
 }
 ```
 
@@ -37,14 +38,16 @@ var err error
 manager := proxy.NewManager(3*time.Second, false, proxy.DefaultLogger{})
 err = manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 if err != nil {
-// ...
+// handle error
 }
 
+// when you want to remove a proxy
 err = manager.Remove("mysql")
 if err != nil {
-// ...
+// handle error
 }
 
+// we provide http interface to manage proxies
 http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
 _ = http.ListenAndServe(":9000", nil)
 ```

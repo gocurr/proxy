@@ -24,7 +24,7 @@ type Proxy struct {
 	logger   Logger
 }
 
-func New(name, local, remote string, timeout time.Duration, logger Logger, failFast bool) *Proxy {
+func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) *Proxy {
 	return &Proxy{
 		name:     name,
 		local:    local,
