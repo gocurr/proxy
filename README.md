@@ -18,7 +18,7 @@ It requires Go 1.11 or later due to usage of Go Modules.
 
 ```go
 var err error
-p := proxy.New(name, local, remote, 3*time.Second, proxy.DefaultLogger{}, false)
+p := proxy.New(name, local, remote, m.timeout, proxy.DefaultLogger{}, m.failFast)
 err = p.Run()
 if err != nil {
 // ...
@@ -34,8 +34,8 @@ if err != nil {
 
 ```go
 var err error
-manager := proxy.NewManager()
-err = manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306", 3*time.Second, DefaultLogger{}, false)
+manager := proxy.NewManager(3*time.Second, false, proxy.DefaultLogger{})
+err = manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 if err != nil {
 // ...
 }

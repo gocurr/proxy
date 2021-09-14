@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type P struct {
@@ -121,7 +120,7 @@ func (m *Manager) addFunc(w http.ResponseWriter, p *P) {
 		handleErr("ip check", errors.New(fmt.Sprintf("proxy bad format: %s %s ", p.Local, p.Remote)), w)
 		return
 	}
-	err := m.Add(p.Name, p.Local, p.Remote, 3*time.Second, DefaultLogger{}, false)
+	err := m.Add(p.Name, p.Local, p.Remote)
 	handleErr("proxys.Add", err, w)
 }
 

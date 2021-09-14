@@ -7,8 +7,8 @@ import (
 )
 
 func Test_main(t *testing.T) {
-	manager := NewManager()
-	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306", 3*time.Second, DefaultLogger{}, false)
+	manager := NewManager(3*time.Second, false, DefaultLogger{})
+	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 	if err != nil {
 		panic(err)
 	}

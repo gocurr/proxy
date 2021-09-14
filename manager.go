@@ -8,22 +8,28 @@ import (
 )
 
 type Manager struct {
-	mu   sync.RWMutex
-	dict map[string]*Proxy
+	mu       sync.RWMutex
+	dict     map[string]*Proxy
+	timeout  time.Duration
+	failFast bool
+	logger   Logger
 }
 
-func NewManager() *Manager {
+func NewManager(timeout time.Duration, failFast bool, logger Logger) *Manager {
 	return &Manager{
-		mu:   sync.RWMutex{},
-		dict: make(map[string]*Proxy),
+		mu:       sync.RWMutex{},
+		dict:     make(map[string]*Proxy),
+		timeout:  timeout,
+		failFast: failFast,
+		logger:   logger,
 	}
 }
 
-func (m *Manager) Add(name, local, remote string, timeout time.Duration, logger Logger, failFast bool) error {
+func (m *Manager) Add(name, local, remote string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	p := New(name, local, remote, timeout, logger, failFast)
+	p := New(name, local, remote, m.timeout, m.logger, m.failFast)
 	err := m.add(name, p)
 	if err != nil {
 		return err
