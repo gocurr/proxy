@@ -88,7 +88,8 @@ func (p *Proxy) run() {
 	testConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
 	if err != nil {
 		if p.failFast {
-			p.logger.Fatal(err)
+			p.logger.Errorf("remote is not alive: %v", err)
+			return
 		} else {
 			p.logger.Errorf("%v", err)
 			goto bind
@@ -100,7 +101,8 @@ bind:
 	// bind local port
 	ln, err := net.Listen("tcp", p.local)
 	if err != nil {
-		p.logger.Fatal(err)
+		p.logger.Errorf("bind local port: ", err)
+		return
 	}
 	defer func() { _ = ln.Close() }()
 
