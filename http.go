@@ -24,7 +24,7 @@ func (m *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Re
 func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			handleErr("method-check", errors.New(fmt.Sprintf("illegal method: %s", r.Method)), w)
+			handleErr("method-check", fmt.Errorf("illegal method: %s", r.Method), w)
 			return
 		}
 
@@ -56,14 +56,14 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 		case "delete":
 			m.delete(w, p)
 		default:
-			handleErr("check-type", errors.New(fmt.Sprintf("unknow type %s", p.Type)), w)
+			handleErr("check-type", fmt.Errorf("unknow type %s", p.Type), w)
 		}
 	}
 }
 
 func (m *Manager) start(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
+		handleErr("manager.Exists", fmt.Errorf("proxy: %s not exist", p.Name), w)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (m *Manager) start(w http.ResponseWriter, p *P) {
 
 func (m *Manager) stop(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s not exist", p.Name)), w)
+		handleErr("manager.Exists", fmt.Errorf("proxy: %s not exist", p.Name), w)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (m *Manager) stop(w http.ResponseWriter, p *P) {
 
 func (m *Manager) delete(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", errors.New(fmt.Sprintf("proxy: %s exists", p.Name)), w)
+		handleErr("manager.Exists", fmt.Errorf("proxy: %s exists", p.Name), w)
 		return
 	}
 
@@ -110,12 +110,12 @@ func parameter(r *http.Request) (*P, error) {
 
 func (m *Manager) insert(w http.ResponseWriter, p *P) {
 	if m.Exists(p.Name) {
-		handleErr("ps.Exists", errors.New(fmt.Sprintf("proxy: %s exists", p.Name)), w)
+		handleErr("ps.Exists", fmt.Errorf("proxy: %s exists", p.Name), w)
 		return
 	}
 	if !strings.ContainsAny(p.Local, ":") ||
 		!strings.ContainsAny(p.Remote, ":") {
-		handleErr("ip check", errors.New(fmt.Sprintf("proxy bad format: %s %s ", p.Local, p.Remote)), w)
+		handleErr("ip check", fmt.Errorf("proxy bad format: %s %s ", p.Local, p.Remote), w)
 		return
 	}
 	err := m.Add(p.Name, p.Local, p.Remote)

@@ -1,7 +1,6 @@
 package proxy
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -40,7 +39,7 @@ func (m *Manager) Add(name, local, remote string) error {
 func (m *Manager) add(name string, p *Proxy) error {
 	_, ok := m.dict[name]
 	if ok {
-		return errors.New(fmt.Sprintf("proxy: %s exists", name))
+		return fmt.Errorf("proxy: %s exists", name)
 	}
 
 	m.dict[name] = p
@@ -59,7 +58,7 @@ func (m *Manager) Remove(name string) error {
 func (m *Manager) remove(name string) error {
 	_, ok := m.dict[name]
 	if !ok {
-		return errors.New(fmt.Sprintf("proxy: %s dose not exists", name))
+		return fmt.Errorf("proxy: %s dose not exists", name)
 	}
 
 	delete(m.dict, name)

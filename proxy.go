@@ -42,7 +42,7 @@ func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if !p.running || p.notified {
-		return errors.New(fmt.Sprintf("%s: proxy already stopped", p.name))
+		return fmt.Errorf("%s: proxy already stopped", p.name)
 	}
 
 	p.toStop <- struct{}{}
