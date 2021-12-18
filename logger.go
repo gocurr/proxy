@@ -9,6 +9,8 @@ type Logger interface {
 	Fatal(args ...interface{})
 }
 
+var Logrus DefaultLogger
+
 type DefaultLogger struct {
 }
 
