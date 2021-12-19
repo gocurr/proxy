@@ -9,7 +9,7 @@ import (
 
 func Test_Proxy(t *testing.T) {
 	manager := proxy.NewManager(3*time.Second, false, proxy.Discard)
-	manager = proxy.NewManager(3*time.Second, false, proxy.Logrus)
+	//manager = proxy.NewManager(3*time.Second, false, proxy.Logrus)
 	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 	if err != nil {
 		panic(err)
