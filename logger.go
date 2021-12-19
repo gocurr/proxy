@@ -1,6 +1,9 @@
 package proxy
 
-import log "github.com/sirupsen/logrus"
+import (
+	log "github.com/sirupsen/logrus"
+	"os"
+)
 
 type Logger interface {
 	Info(args ...interface{})
@@ -9,23 +12,44 @@ type Logger interface {
 	Fatal(args ...interface{})
 }
 
-var Logrus DefaultLogger
+var Discard discardLogger
 
-type DefaultLogger struct {
+type discardLogger struct {
 }
 
-func (d DefaultLogger) Info(args ...interface{}) {
+func (d discardLogger) Info(...interface{}) {
+
+}
+
+func (d discardLogger) Infof(string, ...interface{}) {
+
+}
+
+func (d discardLogger) Errorf(string, ...interface{}) {
+
+}
+
+func (d discardLogger) Fatal(...interface{}) {
+	os.Exit(1)
+}
+
+var Logrus defaultLogger
+
+type defaultLogger struct {
+}
+
+func (d defaultLogger) Info(args ...interface{}) {
 	log.Info(args...)
 }
 
-func (d DefaultLogger) Infof(format string, args ...interface{}) {
+func (d defaultLogger) Infof(format string, args ...interface{}) {
 	log.Infof(format, args...)
 }
 
-func (d DefaultLogger) Errorf(format string, args ...interface{}) {
+func (d defaultLogger) Errorf(format string, args ...interface{}) {
 	log.Errorf(format, args...)
 }
 
-func (d DefaultLogger) Fatal(args ...interface{}) {
+func (d defaultLogger) Fatal(args ...interface{}) {
 	log.Fatal(args...)
 }

@@ -2,18 +2,23 @@ package proxy_test
 
 import (
 	"github.com/gocurr/proxy"
-	"net/http"
+	"net"
 	"testing"
 	"time"
 )
 
 func Test_Proxy(t *testing.T) {
-	manager := proxy.NewManager(3*time.Second, false, proxy.Logrus)
+	manager := proxy.NewManager(3*time.Second, false, proxy.Discard)
+	manager = proxy.NewManager(3*time.Second, false, proxy.Logrus)
 	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
 	if err != nil {
 		panic(err)
 	}
 
-	http.HandleFunc("/inner", manager.HttpProxyCtrl("xxx"))
-	_ = http.ListenAndServe(":9000", nil)
+	time.Sleep(1 * time.Second)
+	testConn, err := net.Dial("tcp", "127.0.0.1:3307")
+	if err != nil {
+		panic(err)
+	}
+	_ = testConn.Close()
 }
