@@ -17,39 +17,46 @@ It requires Go 1.11 or later due to usage of Go Modules.
 - To start a proxy:
 
 ```go
-var err error
-p := proxy.New("mysql", "127.0.0.1:3307", "127.0.0.1:3306", 3*time.Second, false, proxy.DefaultLogger{})
-err = p.Run()
-if err != nil {
-// handle error
-}
+package main
 
-// when you want to stop the proxy
-err = p.Stop()
-if err != nil {
-// handle error
+import (
+	"github.com/gocurr/proxy"
+	"time"
+)
+
+func main() {
+	p := proxy.New("mysql", "127.0.0.1:3306", "127.0.0.1:3307", time.Second, false, proxy.Logrus)
+	if err := p.Run(); err != nil {
+		panic(err)
+	}
+
+	// when you want to stop the proxy
+	if err := p.Stop(); err != nil {
+		panic(err)
+	}
 }
 ```
 
 - To start a proxy-manager:
 
 ```go
-var err error
-manager := proxy.NewManager(3*time.Second, false, proxy.DefaultLogger{})
-err = manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
-if err != nil {
-// handle error
-}
+package main
 
-// when you want to remove a proxy
-err = manager.Remove("mysql")
-if err != nil {
-// handle error
-}
+import (
+	"github.com/gocurr/proxy"
+	"net/http"
+	"time"
+)
 
-// we provide http interface to manage proxies
-http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
-_ = http.ListenAndServe(":9000", nil)
+func main() {
+	manager := proxy.NewManager(3*time.Second, false, proxy.Logrus)
+	if err := manager.Add("httpserver", "127.0.0.1:9091", "127.0.0.1:9090"); err != nil {
+		panic(err)
+	}
+
+	http.HandleFunc("/", manager.HttpProxyCtrl("xxx"))
+	_ = http.ListenAndServe(":9000", nil)
+}
 ```
 
 ```bash
