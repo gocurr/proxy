@@ -1,4 +1,4 @@
-# proxy
+# TCP proxy in Go
 
 To download, run:
 
