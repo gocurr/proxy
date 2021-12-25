@@ -16,12 +16,12 @@ type Proxy struct {
 	timeout  time.Duration
 	toStop   chan struct{}
 	done     chan struct{}
-	failFast bool
-	fired    bool
+	failFast bool // to panic when remote is invalid
+	logger   Logger
+	mu       sync.Mutex // protects remaining
+	readyRun bool
 	running  bool
 	notified bool
-	mu       *sync.Mutex
-	logger   Logger
 }
 
 func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) *Proxy {
@@ -34,7 +34,6 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		toStop:   make(chan struct{}, 2),
 		done:     make(chan struct{}),
 		failFast: failFast,
-		mu:       &sync.Mutex{},
 	}
 }
 
@@ -42,7 +41,7 @@ func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if !p.running || p.notified {
-		return fmt.Errorf("%s: proxy already stopped", p.name)
+		return fmt.Errorf("%s: already stopped", p.name)
 	}
 
 	p.toStop <- struct{}{}
@@ -60,11 +59,11 @@ func (p *Proxy) Run() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.fired {
-		return errors.New("already fired")
+	if p.readyRun {
+		return fmt.Errorf("%s: is ready to run", p.name)
 	}
 
-	p.fired = true
+	p.readyRun = true
 
 	go p.doRun()
 	return nil
@@ -75,8 +74,8 @@ func (p *Proxy) doRun() {
 
 	select {
 	case <-p.done:
-		p.logger.Info(fmt.Sprintf("%s: proxy stopped", p.name))
-		p.fired = false
+		p.logger.Infof("%s: proxy stopped", p.name)
+		p.readyRun = false
 		p.running = false
 		p.notified = false
 		return
@@ -87,17 +86,14 @@ func (p *Proxy) run() {
 	// check destination alive first
 	testConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
 	if err != nil {
+		p.logger.Errorf("%v", err)
 		if p.failFast {
-			p.logger.Errorf("%v", err)
 			return
-		} else {
-			p.logger.Errorf("%v", err)
-			goto bind
 		}
+	} else {
+		_ = testConn.Close()
 	}
-	_ = testConn.Close()
 
-bind:
 	// bind local port
 	ln, err := net.Listen("tcp", p.local)
 	if err != nil {
@@ -107,7 +103,7 @@ bind:
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
-	p.logger.Info(fmt.Sprintf("%s: proxy started", p.name))
+	p.logger.Info(fmt.Sprintf("%s: is running", p.name))
 
 	// accept connections
 	for {
@@ -128,13 +124,14 @@ bind:
 	}
 }
 
+const defaultBufSize = 32 << 10 // 32 KB
+
 func (p *Proxy) proxy(inConn net.Conn) {
 	errChan := make(chan error, 2)
 
 	connClose := func(conn net.Conn) { _ = conn.Close() }
 	connDup := func(dst io.Writer, src io.Reader) {
-		_, err := io.Copy(dst, src)
-		errChan <- err
+		errChan <- p.hijack(dst, src)
 	}
 
 	defer connClose(inConn)
@@ -149,4 +146,39 @@ func (p *Proxy) proxy(inConn net.Conn) {
 	go connDup(inConn, outConn)
 	go connDup(outConn, inConn)
 	<-errChan
+}
+
+var errInvalidWrite = errors.New("invalid write result")
+
+func (p *Proxy) hijack(dst io.Writer, src io.Reader) (err error) {
+	buf := make([]byte, defaultBufSize)
+	for {
+		nr, er := src.Read(buf)
+		if nr > 0 {
+			b := buf[0:nr]
+			p.logger.Infof("%s", string(b))
+			nw, ew := dst.Write(b)
+			if nw < 0 || nr < nw {
+				nw = 0
+				if ew == nil {
+					ew = errInvalidWrite
+				}
+			}
+			if ew != nil {
+				err = ew
+				break
+			}
+			if nr != nw {
+				err = io.ErrShortWrite
+				break
+			}
+		}
+		if er != nil {
+			if er != io.EOF {
+				err = er
+			}
+			break
+		}
+	}
+	return err
 }
