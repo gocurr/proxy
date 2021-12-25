@@ -31,9 +31,9 @@ func main() {
 	}
 
 	// when you want to stop the proxy
-	if err := p.Stop(); err != nil {
-		panic(err)
-	}
+	//if err := p.Stop(); err != nil {
+	//	panic(err)
+	//}
 }
 ```
 
@@ -54,7 +54,7 @@ func main() {
 		panic(err)
 	}
 
-	http.HandleFunc("/", manager.HttpProxyCtrl("xxx"))
+	http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
 	_ = http.ListenAndServe(":9000", nil)
 }
 ```
