@@ -24,7 +24,7 @@ func (m *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Re
 func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			handleErr("method-check", fmt.Errorf("illegal method: %s", r.Method), w)
+			handleErr("method-check", fmt.Errorf("unsupported method: %s", r.Method), w)
 			return
 		}
 
@@ -35,12 +35,12 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 		}
 
 		if ok := tokenValid(token, p.Token); !ok {
-			handleErr("tokenValid", errors.New("token invalid"), w)
+			handleErr("token-check", errors.New("invalid token"), w)
 			return
 		}
 
 		if p.Type == "" {
-			handleErr("paramter", errors.New("type is nil"), w)
+			handleErr("type-check", errors.New("type is nil"), w)
 			return
 		}
 
@@ -56,14 +56,14 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 		case "delete":
 			m.delete(w, p)
 		default:
-			handleErr("check-type", fmt.Errorf("unknow type %s", p.Type), w)
+			handleErr("ctrl", fmt.Errorf("unknow type %s", p.Type), w)
 		}
 	}
 }
 
 func (m *Manager) start(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", fmt.Errorf("proxy: %s not exist", p.Name), w)
+		handleErr("start", fmt.Errorf("%s does not exist", p.Name), w)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (m *Manager) start(w http.ResponseWriter, p *P) {
 
 func (m *Manager) stop(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", fmt.Errorf("proxy: %s not exist", p.Name), w)
+		handleErr("stop", fmt.Errorf("%s does not exist", p.Name), w)
 		return
 	}
 
@@ -85,12 +85,12 @@ func (m *Manager) stop(w http.ResponseWriter, p *P) {
 
 func (m *Manager) delete(w http.ResponseWriter, p *P) {
 	if !m.Exists(p.Name) {
-		handleErr("manager.Exists", fmt.Errorf("proxy: %s exists", p.Name), w)
+		handleErr("delete", fmt.Errorf("%s does not exist", p.Name), w)
 		return
 	}
 
 	err := m.Remove(p.Name)
-	handleErr("proxys.Remove", err, w)
+	handleErr("delete", err, w)
 }
 
 func parameter(r *http.Request) (*P, error) {
@@ -110,16 +110,16 @@ func parameter(r *http.Request) (*P, error) {
 
 func (m *Manager) insert(w http.ResponseWriter, p *P) {
 	if m.Exists(p.Name) {
-		handleErr("ps.Exists", fmt.Errorf("proxy: %s exists", p.Name), w)
+		handleErr("insert", fmt.Errorf("%s exists", p.Name), w)
 		return
 	}
 	if !strings.ContainsAny(p.Local, ":") ||
 		!strings.ContainsAny(p.Remote, ":") {
-		handleErr("ip check", fmt.Errorf("proxy bad format: %s %s ", p.Local, p.Remote), w)
+		handleErr("addr-check", fmt.Errorf("bad format: %s:%s ", p.Local, p.Remote), w)
 		return
 	}
 	err := m.Add(p.Name, p.Local, p.Remote)
-	handleErr("proxys.Add", err, w)
+	handleErr("insert", err, w)
 }
 
 func (m *Manager) details(w http.ResponseWriter) {
