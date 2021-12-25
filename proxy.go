@@ -18,7 +18,7 @@ type Proxy struct {
 	done     chan struct{}
 	failFast bool // to panic when remote is invalid
 	logger   Logger
-	mu       sync.Mutex // protects remaining
+	mu       sync.Mutex // protects the remaining
 	readyRun bool
 	running  bool
 	notified bool
