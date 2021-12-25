@@ -41,7 +41,7 @@ func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if !p.running || p.notified {
-		return fmt.Errorf("%s: already stopped", p.name)
+		return fmt.Errorf("%s: is done", p.name)
 	}
 
 	p.toStop <- struct{}{}
@@ -74,7 +74,7 @@ func (p *Proxy) doRun() {
 
 	select {
 	case <-p.done:
-		p.logger.Infof("%s: proxy stopped", p.name)
+		p.logger.Infof("%s: is done", p.name)
 		p.readyRun = false
 		p.running = false
 		p.notified = false
@@ -124,8 +124,6 @@ func (p *Proxy) run() {
 	}
 }
 
-const defaultBufSize = 32 << 10 // 32 KB
-
 func (p *Proxy) proxy(inConn net.Conn) {
 	errChan := make(chan error, 2)
 
@@ -149,6 +147,8 @@ func (p *Proxy) proxy(inConn net.Conn) {
 }
 
 var errInvalidWrite = errors.New("invalid write result")
+
+const defaultBufSize = 32 << 10 // 32 KB
 
 func (p *Proxy) hijack(dst io.Writer, src io.Reader) (err error) {
 	buf := make([]byte, defaultBufSize)
