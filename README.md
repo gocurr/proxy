@@ -1,4 +1,4 @@
-# TCP proxy in Go
+# TCP Proxy in Go
 
 To download, run:
 
