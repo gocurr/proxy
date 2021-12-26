@@ -60,7 +60,7 @@ func (p *Proxy) Run() error {
 	defer p.mu.Unlock()
 
 	if p.running {
-		return fmt.Errorf("%s is running", p.name)
+		return fmt.Errorf("%s is already running", p.name)
 	}
 
 	go p.doRun()
