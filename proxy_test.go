@@ -8,18 +8,21 @@ import (
 )
 
 var manager = proxy.NewManager(3*time.Second, false, proxy.Logrus)
+var local = "127.0.0.1:3307"
+var remote = "127.0.0.1:3306"
+var mysql = "mysql"
 
 func Test_Proxy(t *testing.T) {
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 100; i++ {
 		add(t)
 		remove(t)
 	}
 }
 
 func add(t *testing.T) {
-	err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306")
+	err := manager.Add(mysql, local, remote)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 	if tryConn() != nil {
 		t.Fatal("cannot add")
@@ -27,8 +30,8 @@ func add(t *testing.T) {
 }
 
 func remove(t *testing.T) {
-	if err := manager.Remove("mysql"); err != nil {
-		panic(err)
+	if err := manager.Remove(mysql); err != nil {
+		t.Fatal(err)
 	}
 	if tryConn() == nil {
 		t.Fatal("cannot remove")
@@ -36,8 +39,7 @@ func remove(t *testing.T) {
 }
 
 func tryConn() error {
-	time.Sleep(1 * time.Second)
-	conn, err := net.Dial("tcp", "127.0.0.1:3307")
+	conn, err := net.Dial("tcp", local)
 	if err != nil {
 		return err
 	}

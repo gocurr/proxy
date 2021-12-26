@@ -47,12 +47,14 @@ func (p *Proxy) Stop() error {
 
 	p.notifyDone <- struct{}{}
 
-	// consume a conn
-	testConn, err := net.Dial("tcp", p.local)
-	if err != nil {
-		return err
+	// wait for connection refused
+	for {
+		testConn, err := net.Dial("tcp", p.local)
+		if err != nil {
+			return nil
+		}
+		_ = testConn.Close()
 	}
-	return testConn.Close()
 }
 
 func (p *Proxy) Run() error {
