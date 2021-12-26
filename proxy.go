@@ -106,7 +106,7 @@ func (p *Proxy) run() {
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
-	p.logger.Info(fmt.Sprintf("%s is running", p.name))
+	p.logger.Infof("%s is running", p.name)
 	p.burst <- struct{}{}
 
 	// accept connections
