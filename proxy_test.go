@@ -2,26 +2,21 @@ package proxy_test
 
 import (
 	"github.com/gocurr/proxy"
-	"net"
 	"testing"
 	"time"
 )
 
-var manager = proxy.NewManager(3*time.Second, false, proxy.Logrus)
-var local = "127.0.0.1:3307"
-var remote = "127.0.0.1:3306"
-var mysql = "mysql"
+var p = proxy.New(mysql, local, remote, time.Second, false, proxy.Discard)
 
 func Test_Proxy(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		add(t)
-		remove(t)
+	for i := 0; i < 10; i++ {
+		run(t)
+		stop(t)
 	}
 }
 
-func add(t *testing.T) {
-	err := manager.Add(mysql, local, remote)
-	if err != nil {
+func run(t *testing.T) {
+	if err := p.Run(); err != nil {
 		t.Fatal(err)
 	}
 	if tryConn() != nil {
@@ -29,19 +24,11 @@ func add(t *testing.T) {
 	}
 }
 
-func remove(t *testing.T) {
-	if err := manager.Remove(mysql); err != nil {
+func stop(t *testing.T) {
+	if err := p.Stop(); err != nil {
 		t.Fatal(err)
 	}
 	if tryConn() == nil {
 		t.Fatal("cannot remove")
 	}
-}
-
-func tryConn() error {
-	conn, err := net.Dial("tcp", local)
-	if err != nil {
-		return err
-	}
-	return conn.Close()
 }

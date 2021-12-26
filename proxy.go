@@ -10,13 +10,17 @@ import (
 )
 
 type Proxy struct {
-	name       string
-	local      string
-	remote     string
-	timeout    time.Duration
-	failFast   bool // when remote is invalid
-	logger     Logger
-	mu         sync.Mutex // protects the remaining
+	name     string
+	local    string
+	remote   string
+	timeout  time.Duration
+	failFast bool // when remote is invalid
+	logger   Logger
+	mu       sync.Mutex // protects the remaining
+
+	// Note: notifyDone must be a buffered channel.
+	// In the endless for-loop, once the default case is selected,
+	// code "select { case <-p.notifyDone: ...}" maybe not prepared.
 	notifyDone chan struct{}
 	done       chan struct{}
 	burst      chan struct{}
