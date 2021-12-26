@@ -16,7 +16,7 @@ type Proxy struct {
 	timeout  time.Duration
 	toStop   chan struct{}
 	done     chan struct{}
-	failFast bool // to panic when remote is invalid
+	failFast bool // when remote is invalid
 	logger   Logger
 	mu       sync.Mutex // protects the remaining
 	readyRun bool
