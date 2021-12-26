@@ -10,42 +10,42 @@ import (
 )
 
 type Proxy struct {
-	name     string
-	local    string
-	remote   string
-	timeout  time.Duration
-	toStop   chan struct{}
-	done     chan struct{}
-	failFast bool // when remote is invalid
-	logger   Logger
-	mu       sync.Mutex // protects the remaining
-	readyRun bool
-	running  bool
-	notified bool
+	name       string
+	local      string
+	remote     string
+	timeout    time.Duration
+	notifyDone chan struct{}
+	done       chan struct{}
+	burst      chan struct{}
+	failFast   bool // when remote is invalid
+	logger     Logger
+	mu         sync.Mutex // protects the remaining
+	running    bool
 }
 
 func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) *Proxy {
 	return &Proxy{
-		name:     name,
-		local:    local,
-		remote:   remote,
-		timeout:  timeout,
-		logger:   logger,
-		toStop:   make(chan struct{}, 2),
-		done:     make(chan struct{}),
-		failFast: failFast,
+		name:       name,
+		local:      local,
+		remote:     remote,
+		timeout:    timeout,
+		logger:     logger,
+		notifyDone: make(chan struct{}, 2),
+		done:       make(chan struct{}),
+		burst:      make(chan struct{}),
+		failFast:   failFast,
 	}
 }
 
 func (p *Proxy) Stop() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if !p.running || p.notified {
-		return fmt.Errorf("%s: is done", p.name)
+
+	if !p.running {
+		return fmt.Errorf("%s is already done", p.name)
 	}
 
-	p.toStop <- struct{}{}
-	p.notified = true
+	p.notifyDone <- struct{}{}
 
 	// consume a conn
 	testConn, err := net.Dial("tcp", p.local)
@@ -59,31 +59,28 @@ func (p *Proxy) Run() error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.readyRun {
-		return fmt.Errorf("%s: is ready to run", p.name)
+	if p.running {
+		return fmt.Errorf("%s is running", p.name)
 	}
 
-	p.readyRun = true
-
 	go p.doRun()
+
+	<-p.burst
+
 	return nil
 }
 
 func (p *Proxy) doRun() {
 	go p.run()
 
-	select {
-	case <-p.done:
-		p.logger.Infof("%s: is done", p.name)
-		p.readyRun = false
-		p.running = false
-		p.notified = false
-		return
-	}
+	<-p.done
+	p.logger.Infof("%s is just done", p.name)
+	p.running = false
+	return
 }
 
 func (p *Proxy) run() {
-	// check destination alive first
+	// check destination invalid first
 	testConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
 	if err != nil {
 		p.logger.Errorf("%v", err)
@@ -103,12 +100,13 @@ func (p *Proxy) run() {
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
-	p.logger.Info(fmt.Sprintf("%s: is running", p.name))
+	p.logger.Info(fmt.Sprintf("%s is running", p.name))
+	p.burst <- struct{}{}
 
 	// accept connections
 	for {
 		select {
-		case <-p.toStop:
+		case <-p.notifyDone:
 			p.done <- struct{}{}
 			return
 		default:

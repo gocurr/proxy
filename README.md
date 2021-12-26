@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	p := proxy.New("mysql", "127.0.0.1:3306", "127.0.0.1:3307", time.Second, false, proxy.Logrus)
+	p := proxy.New("mysql", "127.0.0.1:3307", "127.0.0.1:3306", time.Second, false, proxy.Logrus)
 	if err := p.Run(); err != nil {
 		panic(err)
 	}
@@ -50,7 +50,7 @@ import (
 
 func main() {
 	manager := proxy.NewManager(3*time.Second, false, proxy.Logrus)
-	if err := manager.Add("httpserver", "127.0.0.1:9091", "127.0.0.1:9090"); err != nil {
+	if err := manager.Add("mysql", "127.0.0.1:3307", "127.0.0.1:3306"); err != nil {
 		panic(err)
 	}
 
