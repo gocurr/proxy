@@ -14,12 +14,12 @@ type Proxy struct {
 	local      string
 	remote     string
 	timeout    time.Duration
-	notifyDone chan struct{}
-	done       chan struct{}
-	burst      chan struct{}
 	failFast   bool // when remote is invalid
 	logger     Logger
 	mu         sync.Mutex // protects the remaining
+	notifyDone chan struct{}
+	done       chan struct{}
+	burst      chan struct{}
 	running    bool
 }
 
