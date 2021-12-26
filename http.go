@@ -143,6 +143,7 @@ func tokenValid(token string, other string) bool {
 func handleErr(method string, err error, w http.ResponseWriter) {
 	msg := "ok"
 	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
 		msg = err.Error()
 	}
 	_, _ = w.Write([]byte(fmt.Sprintf("%s: %s", method, msg)))
