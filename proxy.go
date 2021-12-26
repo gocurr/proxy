@@ -30,7 +30,7 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		remote:     remote,
 		timeout:    timeout,
 		logger:     logger,
-		notifyDone: make(chan struct{}, 2),
+		notifyDone: make(chan struct{}, 1),
 		done:       make(chan struct{}),
 		burst:      make(chan struct{}),
 		failFast:   failFast,
