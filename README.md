@@ -44,6 +44,7 @@ package main
 
 import (
 	"github.com/gocurr/proxy"
+	"log"
 	"net/http"
 	"time"
 )
@@ -55,7 +56,7 @@ func main() {
 	}
 
 	http.HandleFunc("/proxy", manager.HttpProxyCtrl("xxx"))
-	_ = http.ListenAndServe(":9000", nil)
+	log.Fatalln(http.ListenAndServe(":9000", nil))
 }
 ```
 
