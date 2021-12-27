@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 )
 
 type P struct {
@@ -104,8 +103,8 @@ func (m *Manager) register(w http.ResponseWriter, p *P) {
 		return
 	}
 
-	m.Register(p.Name, p.Local, p.Remote, p.Timeout, p.FailFast, p.Discard)
-	handleErr("register", nil, w)
+	err := m.Register(p.Name, p.Local, p.Remote, p.Timeout, p.FailFast, p.Discard)
+	handleErr("register", err, w)
 }
 
 func parameter(r *http.Request) (*P, error) {
@@ -126,11 +125,6 @@ func parameter(r *http.Request) (*P, error) {
 func (m *Manager) insert(w http.ResponseWriter, p *P) {
 	if m.Exists(p.Name) {
 		handleErr("insert", fmt.Errorf("%s exists", p.Name), w)
-		return
-	}
-	if !strings.ContainsAny(p.Local, ":") ||
-		!strings.ContainsAny(p.Remote, ":") {
-		handleErr("addr-check", fmt.Errorf("bad format: %s:%s ", p.Local, p.Remote), w)
 		return
 	}
 	err := m.Add(p.Name, p.Local, p.Remote)
