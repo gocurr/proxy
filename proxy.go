@@ -36,6 +36,7 @@ var ipReg = regexp.MustCompile(ipPattern)
 var errIp = errors.New("bad ip format")
 var errAddr = errors.New("bad addr format")
 var errPort = errors.New("bad port format")
+var errTimeout = errors.New("bad timeout format")
 
 func portCheck(s string) error {
 	a, err := strconv.Atoi(s)
@@ -81,6 +82,10 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 	remote, err = reAddr(remote)
 	if err != nil {
 		return nil, err
+	}
+
+	if timeout < 0 {
+		return nil, errTimeout
 	}
 
 	return &Proxy{
