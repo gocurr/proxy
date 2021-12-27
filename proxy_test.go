@@ -6,7 +6,15 @@ import (
 	"time"
 )
 
-var p = proxy.New(mysql, local, remote, time.Second, false, proxy.Discard)
+var err error
+var p *proxy.Proxy
+
+func init() {
+	p, err = proxy.New(mysql, local, remote, time.Second, false, proxy.Discard)
+	if err != nil {
+		panic(err)
+	}
+}
 
 func Test_Proxy(t *testing.T) {
 	for i := 0; i < 10; i++ {

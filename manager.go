@@ -28,9 +28,11 @@ func (m *Manager) Add(name, local, remote string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	p := New(name, local, remote, m.timeout, m.failFast, m.logger)
-	err := m.add(name, p)
+	p, err := New(name, local, remote, m.timeout, m.failFast, m.logger)
 	if err != nil {
+		return err
+	}
+	if err := m.add(name, p); err != nil {
 		return err
 	}
 	return p.Run()
@@ -55,7 +57,7 @@ func (m *Manager) Remove(name string) error {
 	return m.remove(name)
 }
 
-func (m *Manager) Register(name, local, remote string, timeout int, failFast, discard bool) {
+func (m *Manager) Register(name, local, remote string, timeout int, failFast, discard bool) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -64,7 +66,12 @@ func (m *Manager) Register(name, local, remote string, timeout int, failFast, di
 		logger = Discard
 	}
 
-	m.dict[name] = New(name, local, remote, time.Duration(timeout)*time.Second, failFast, logger)
+	proxy, err := New(name, local, remote, time.Duration(timeout)*time.Second, failFast, logger)
+	if err != nil {
+		return err
+	}
+	m.dict[name] = proxy
+	return nil
 }
 
 func (m *Manager) remove(name string) error {

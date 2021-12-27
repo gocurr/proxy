@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -27,7 +30,59 @@ type Proxy struct {
 	running    bool
 }
 
-func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) *Proxy {
+var ipPattern = `/^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$`
+var ipReg = regexp.MustCompile(ipPattern)
+
+var errIp = errors.New("bad ip format")
+var errAddr = errors.New("bad addr format")
+var errPort = errors.New("bad port format")
+
+func portCheck(s string) error {
+	a, err := strconv.Atoi(s)
+	if err != nil {
+		return err
+	}
+	if a < 0 || a > 65535 {
+		return errPort
+	}
+	return nil
+}
+
+func reAddr(s string) (string, error) {
+	ipPort := strings.Split(s, ":")
+	// only port
+	if len(ipPort) == 1 {
+		if err := portCheck(s); err != nil {
+			return "", err
+		} else {
+			return "127.0.0.1:" + s, nil
+		}
+	}
+
+	if len(ipPort) != 2 {
+		return "", errAddr
+	}
+
+	// ip:port
+	if ipReg.MatchString(ipPort[0]) {
+		return "", errIp
+	}
+	if err := portCheck(ipPort[1]); err != nil {
+		return "", err
+	}
+	return s, nil
+}
+func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) (*Proxy, error) {
+	local, err := reAddr(local)
+	if err != nil {
+		return nil, err
+	}
+
+	remote, err = reAddr(remote)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Proxy{
 		name:       name,
 		local:      local,
@@ -38,7 +93,7 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		done:       make(chan struct{}),
 		burst:      make(chan struct{}),
 		failFast:   failFast,
-	}
+	}, nil
 }
 
 func (p *Proxy) Stop() error {

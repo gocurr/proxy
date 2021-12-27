@@ -3,13 +3,14 @@ package proxy_test
 import (
 	"github.com/gocurr/proxy"
 	"net"
+	"strings"
 	"testing"
 	"time"
 )
 
 var manager = proxy.NewManager(3*time.Second, false, proxy.Discard)
-var local = "127.0.0.1:3307"
-var remote = "127.0.0.1:3306"
+var local = "3307"
+var remote = "3306"
 var mysql = "mysql"
 
 func Test_Manager(t *testing.T) {
@@ -39,7 +40,11 @@ func remove(t *testing.T) {
 }
 
 func tryConn() error {
-	conn, err := net.Dial("tcp", local)
+	address := local
+	if !strings.Contains(local, ":") {
+		address = "127.0.0.1:" + local
+	}
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return err
 	}
