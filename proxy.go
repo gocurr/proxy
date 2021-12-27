@@ -26,7 +26,7 @@ type Proxy struct {
 	// code "select { case <-p.notifyDone: ...}" maybe not prepared.
 	notifyDone chan struct{}
 	done       chan struct{}
-	burst      chan struct{}
+	burst      chan error
 	running    bool
 }
 
@@ -96,7 +96,7 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		logger:     logger,
 		notifyDone: make(chan struct{}, 1),
 		done:       make(chan struct{}),
-		burst:      make(chan struct{}),
+		burst:      make(chan error),
 		failFast:   failFast,
 	}, nil
 }
@@ -131,9 +131,8 @@ func (p *Proxy) Run() error {
 
 	go p.doRun()
 
-	<-p.burst
-
-	return nil
+	err := <-p.burst
+	return err
 }
 
 func (p *Proxy) doRun() {
@@ -160,14 +159,14 @@ func (p *Proxy) run() {
 	// bind local port
 	ln, err := net.Listen("tcp", p.local)
 	if err != nil {
-		p.logger.Errorf("%v", err)
+		p.burst <- err
 		return
 	}
 	defer func() { _ = ln.Close() }()
 
 	p.running = true
 	p.logger.Infof("%s is running", p.name)
-	p.burst <- struct{}{}
+	p.burst <- nil
 
 	// accept connections
 	for {
