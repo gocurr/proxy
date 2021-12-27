@@ -73,6 +73,7 @@ func reAddr(s string) (string, error) {
 	}
 	return s, nil
 }
+
 func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) (*Proxy, error) {
 	local, err := reAddr(local)
 	if err != nil {
@@ -90,6 +91,22 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 
 	if timeout <= 0 {
 		return nil, errTimeout
+	}
+
+	// check local-port first
+	lConn, lErr := net.DialTimeout("tcp", local, timeout)
+	if lErr == nil {
+		_ = lConn.Close()
+		return nil, errLocal
+	}
+	// check remote address invalid then
+	rConn, rErr := net.DialTimeout("tcp", remote, timeout)
+	if rErr != nil {
+		if failFast {
+			return nil, rErr
+		}
+	} else {
+		_ = rConn.Close()
 	}
 
 	return &Proxy{
