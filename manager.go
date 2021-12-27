@@ -55,6 +55,18 @@ func (m *Manager) Remove(name string) error {
 	return m.remove(name)
 }
 
+func (m *Manager) Register(name, local, remote string, timeout int, failFast, discard bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var logger Logger = Logrus
+	if discard {
+		logger = Discard
+	}
+
+	m.dict[name] = New(name, local, remote, time.Duration(timeout)*time.Second, failFast, logger)
+}
+
 func (m *Manager) remove(name string) error {
 	_, ok := m.dict[name]
 	if !ok {

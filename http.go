@@ -10,11 +10,14 @@ import (
 )
 
 type P struct {
-	Token  string `json:"token"`
-	Type   string `json:"type"`
-	Name   string `json:"name"`
-	Local  string `json:"local"`
-	Remote string `json:"remote"`
+	Token    string `json:"token"`
+	Type     string `json:"type"`
+	Name     string `json:"name"`
+	Local    string `json:"local"`
+	Remote   string `json:"remote"`
+	Timeout  int    `json:"timeout"`   // seconds
+	Discard  bool   `json:"discard"`   // for logging
+	FailFast bool   `json:"fail_fast"` // when remote invalid
 }
 
 func (m *Manager) HttpProxyCtrl(token string) func(http.ResponseWriter, *http.Request) {
@@ -55,6 +58,8 @@ func (m *Manager) ctrl(token string) func(http.ResponseWriter, *http.Request) {
 			m.insert(w, p)
 		case "delete":
 			m.delete(w, p)
+		case "register":
+			m.register(w, p)
 		default:
 			handleErr("ctrl", fmt.Errorf("unknow type %s", p.Type), w)
 		}
@@ -91,6 +96,16 @@ func (m *Manager) delete(w http.ResponseWriter, p *P) {
 
 	err := m.Remove(p.Name)
 	handleErr("delete", err, w)
+}
+
+func (m *Manager) register(w http.ResponseWriter, p *P) {
+	if m.Exists(p.Name) {
+		handleErr("register", fmt.Errorf("%s exists", p.Name), w)
+		return
+	}
+
+	m.Register(p.Name, p.Local, p.Remote, p.Timeout, p.FailFast, p.Discard)
+	handleErr("register", nil, w)
 }
 
 func parameter(r *http.Request) (*P, error) {
