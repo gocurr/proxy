@@ -84,6 +84,10 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		return nil, err
 	}
 
+	if remote == local {
+		return nil, errAddr
+	}
+
 	if timeout <= 0 {
 		return nil, errTimeout
 	}
@@ -144,16 +148,25 @@ func (p *Proxy) doRun() {
 	return
 }
 
+var errLocal = errors.New("local-port is in use")
+
 func (p *Proxy) run() {
-	// check destination invalid first
-	testConn, err := net.DialTimeout("tcp", p.remote, p.timeout)
-	if err != nil {
-		p.logger.Errorf("%v", err)
+	// check local-port first
+	lConn, lErr := net.DialTimeout("tcp", p.local, p.timeout)
+	if lErr == nil {
+		_ = lConn.Close()
+		p.burst <- errLocal
+		return
+	}
+	// check remote address invalid then
+	rConn, rErr := net.DialTimeout("tcp", p.remote, p.timeout)
+	if rErr != nil {
 		if p.failFast {
+			p.burst <- rErr
 			return
 		}
 	} else {
-		_ = testConn.Close()
+		_ = rConn.Close()
 	}
 
 	// bind local port
