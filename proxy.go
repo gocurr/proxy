@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -30,48 +28,14 @@ type Proxy struct {
 	running    bool
 }
 
-var ipPattern = `/^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$`
-var ipReg = regexp.MustCompile(ipPattern)
-
-var errIp = errors.New("proxy: bad ip format")
-var errAddr = errors.New("proxy: bad addr format")
-var errPort = errors.New("proxy: bad port format")
-var errTimeout = errors.New("proxy: timeout must be greater than 0")
-
-func portCheck(s string) error {
-	a, err := strconv.Atoi(s)
-	if err != nil {
-		return err
-	}
-	if a < 0 || a > 65535 {
-		return errPort
-	}
-	return nil
-}
-
 func reAddr(s string) (string, error) {
 	ipPort := strings.Split(s, ":")
 	// Only port.
 	if len(ipPort) == 1 {
-		if err := portCheck(s); err != nil {
-			return "", err
-		} else {
-			return "127.0.0.1:" + s, nil
-		}
+		s = "127.0.0.1:" + ipPort[0] // assume s is port
 	}
-
-	if len(ipPort) != 2 {
-		return "", errAddr
-	}
-
-	// ip:port
-	if ipReg.MatchString(ipPort[0]) {
-		return "", errIp
-	}
-	if err := portCheck(ipPort[1]); err != nil {
-		return "", err
-	}
-	return s, nil
+	_, _, err := net.SplitHostPort(s)
+	return s, err
 }
 
 func New(name, local, remote string, timeout time.Duration, failFast bool, logger Logger) (*Proxy, error) {
@@ -86,11 +50,11 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 	}
 
 	if remote == local {
-		return nil, errAddr
+		return nil, errors.New("proxy: bad address format")
 	}
 
 	if timeout <= 0 {
-		return nil, errTimeout
+		return nil, errors.New("proxy: timeout must be greater than 0")
 	}
 
 	// Check local-port first.
