@@ -19,7 +19,7 @@ type Proxy struct {
 	timeout  time.Duration
 	failFast bool // when remote is invalid
 	logger   Logger
-	mu       sync.Mutex // protects the remaining
+	mu       sync.Mutex // protects the remaining fields
 
 	// Note: notifyDone must be a buffered channel.
 	// In the endless for-loop, once the default case is selected,
@@ -33,10 +33,10 @@ type Proxy struct {
 var ipPattern = `/^((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])$`
 var ipReg = regexp.MustCompile(ipPattern)
 
-var errIp = errors.New("bad ip format")
-var errAddr = errors.New("bad addr format")
-var errPort = errors.New("bad port format")
-var errTimeout = errors.New("timeout must be greater than 0")
+var errIp = errors.New("proxy: bad ip format")
+var errAddr = errors.New("proxy: bad addr format")
+var errPort = errors.New("proxy: bad port format")
+var errTimeout = errors.New("proxy: timeout must be greater than 0")
 
 func portCheck(s string) error {
 	a, err := strconv.Atoi(s)
@@ -51,7 +51,7 @@ func portCheck(s string) error {
 
 func reAddr(s string) (string, error) {
 	ipPort := strings.Split(s, ":")
-	// only port
+	// Only port.
 	if len(ipPort) == 1 {
 		if err := portCheck(s); err != nil {
 			return "", err
@@ -93,13 +93,13 @@ func New(name, local, remote string, timeout time.Duration, failFast bool, logge
 		return nil, errTimeout
 	}
 
-	// check local-port first
+	// Check local-port first.
 	lConn, lErr := net.DialTimeout("tcp", local, timeout)
 	if lErr == nil {
 		_ = lConn.Close()
 		return nil, errLocal
 	}
-	// check remote address invalid then
+	// Check remote address invalid then.
 	rConn, rErr := net.DialTimeout("tcp", remote, timeout)
 	if rErr != nil {
 		if failFast {
@@ -127,18 +127,24 @@ func (p *Proxy) Stop() error {
 	defer p.mu.Unlock()
 
 	if !p.running {
-		return fmt.Errorf("%s is already done", p.name)
+		return fmt.Errorf("proxy: %s is done already", p.name)
 	}
 
 	p.notifyDone <- struct{}{}
 
-	// wait for connection refused
+	// Wait for connection refused.
+	var try = 0
 	for {
+		try++
 		testConn, err := net.Dial("tcp", p.local)
 		if err != nil {
 			return nil
 		}
 		_ = testConn.Close()
+		const maxTries = 3
+		if try > maxTries {
+			return fmt.Errorf("proxy: tried %d times to wait for connection refused", try)
+		}
 	}
 }
 
@@ -147,7 +153,7 @@ func (p *Proxy) Run() error {
 	defer p.mu.Unlock()
 
 	if p.running {
-		return fmt.Errorf("%s is already running", p.name)
+		return fmt.Errorf("proxy: %s was running", p.name)
 	}
 
 	go p.doRun()
@@ -165,17 +171,17 @@ func (p *Proxy) doRun() {
 	return
 }
 
-var errLocal = errors.New("local-port is in use")
+var errLocal = errors.New("proxy: local-port is in use")
 
 func (p *Proxy) run() {
-	// check local-port first
+	// Check local-port first.
 	lConn, lErr := net.DialTimeout("tcp", p.local, p.timeout)
 	if lErr == nil {
 		_ = lConn.Close()
 		p.burst <- errLocal
 		return
 	}
-	// check remote address invalid then
+	// Check remote address invalid then.
 	rConn, rErr := net.DialTimeout("tcp", p.remote, p.timeout)
 	if rErr != nil {
 		if p.failFast {
@@ -186,7 +192,7 @@ func (p *Proxy) run() {
 		_ = rConn.Close()
 	}
 
-	// bind local port
+	// Bind local port.
 	ln, err := net.Listen("tcp", p.local)
 	if err != nil {
 		p.burst <- err
@@ -198,7 +204,7 @@ func (p *Proxy) run() {
 	p.logger.Infof("%s is running", p.name)
 	p.burst <- nil
 
-	// accept connections
+	// Accept connections.
 	for {
 		select {
 		case <-p.notifyDone:
@@ -211,7 +217,7 @@ func (p *Proxy) run() {
 				continue
 			}
 
-			// to proxy
+			// To proxy.
 			go p.proxy(conn)
 		}
 	}
@@ -239,7 +245,7 @@ func (p *Proxy) proxy(inConn net.Conn) {
 	<-errChan
 }
 
-var errInvalidWrite = errors.New("invalid write result")
+var errInvalidWrite = errors.New("proxy: invalid write result")
 
 const defaultBufSize = 32 << 10 // 32 KB
 

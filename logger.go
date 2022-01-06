@@ -9,7 +9,7 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 }
 
-// Discard discards logs
+// Discard discards logs.
 var Discard discardLogger
 
 type discardLogger struct{}
@@ -18,7 +18,7 @@ func (d discardLogger) Infof(string, ...interface{}) {}
 
 func (d discardLogger) Errorf(string, ...interface{}) {}
 
-// Logrus default proxy logger
+// Logrus default proxy logger.
 var Logrus defaultLogger
 
 type defaultLogger struct{}
